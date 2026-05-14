@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import FinancialDashboard from '../components/FinancialDashboard'
+import SpendingHeatmap from '../components/SpendingHeatmap'
 
 export default function EndScreen({ result, onReplay }) {
   const rating = (result.money / 5000 + result.savings / 5000 + result.happiness / 100 + result.credit / 1000) / 4
@@ -61,6 +62,11 @@ export default function EndScreen({ result, onReplay }) {
         ) : (
           <p className="text-base md:text-xl text-slate-600">Keep playing to unlock more achievement badges!</p>
         )}
+      </div>
+
+      {/* Spending Heatmap */}
+      <div className="mb-4">
+        <SpendingHeatmap result={result} />
       </div>
 
       {/* Lessons Learned */}
