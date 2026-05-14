@@ -4,8 +4,14 @@ import FinancialDashboard from '../components/FinancialDashboard'
 import SpendingHeatmap from '../components/SpendingHeatmap'
 
 export default function EndScreen({ result, onReplay }) {
-  const rating = (result.money / 5000 + result.savings / 5000 + result.happiness / 100 + result.credit / 1000) / 4
-  const scorePercent = Math.round(rating * 100)
+  // Ensure all values have defaults to prevent NaN
+  const money = result?.money ?? 0
+  const savings = result?.savings ?? 0
+  const happiness = result?.happiness ?? 0
+  const credit = result?.credit ?? 720
+  
+  const rating = (money / 5000 + savings / 5000 + happiness / 100 + credit / 1000) / 4
+  const scorePercent = Math.round(Math.max(0, Math.min(100, rating * 100)))
   
   // Determine rank based on performance and difficulty
   let rankIcon = '🏆'
@@ -16,17 +22,17 @@ export default function EndScreen({ result, onReplay }) {
   else if (scorePercent >= 50) rankTitle = 'GOOD MONEY MANAGER'
   else rankTitle = 'LEARNING JOURNEY'
   
-  const title = result.personality ? `${rankIcon} ${result.personality}` : rankIcon + ' ' + rankTitle
-  const recap = result.money > 0 && result.savings > 1500
+  const title = result?.personality ? `${rankIcon} ${result.personality}` : rankIcon + ' ' + rankTitle
+  const recap = money > 0 && savings > 1500
     ? 'You finished the month with money left and a strong savings habit. Excellent money management!'
-    : result.money <= 0
+    : money <= 0
       ? 'The month was tough, and overspending made survival harder. But you learned valuable lessons!'
       : 'You survived the month while learning how money choices change outcomes.'
 
   const lessons = []
-  if (result.savings < 1500) lessons.push('Build emergency savings early to stay safe in surprise events.')
-  if (result.credit < 650) lessons.push('Use credit carefully and pay it back quickly to protect your score.')
-  if (result.happiness < 60) lessons.push('Balanced spending keeps both your wallet and mood healthy.')
+  if (savings < 1500) lessons.push('Build emergency savings early to stay safe in surprise events.')
+  if (credit < 650) lessons.push('Use credit carefully and pay it back quickly to protect your score.')
+  if (happiness < 60) lessons.push('Balanced spending keeps both your wallet and mood healthy.')
   if (lessons.length === 0) lessons.push('Amazing balance! You used budgeting, saving, and patience very well.')
 
   return (
