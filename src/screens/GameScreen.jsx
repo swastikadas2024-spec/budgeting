@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import EventCard from '../components/EventCard'
+import Calculator from '../components/Calculator'
 
 const SAVE_KEY = 'budget-hero-save-v2'
 const STARTING_MONEY = 5000
@@ -606,6 +607,12 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
           {achievements.map((badge) => <p key={badge} className="text-slate-700 text-base md:text-lg mb-1">🏅 {badge}</p>)}
         </div>
       </div>
+
+      {/* Floating Calculator */}
+      <Calculator onSaveCalculation={(result) => {
+        setFloatingText(`💡 Saved calculation: ₹${result}`)
+        setTimeout(() => setFloatingText(''), 1500)
+      }} />
     </div>
   )
 }
