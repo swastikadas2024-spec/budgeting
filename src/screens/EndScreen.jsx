@@ -4,11 +4,22 @@ import FinancialDashboard from '../components/FinancialDashboard'
 
 export default function EndScreen({ result, onReplay }) {
   const rating = (result.money / 5000 + result.savings / 5000 + result.happiness / 100 + result.credit / 1000) / 4
-  const title = result.personality ? `🏆 ${result.personality}` : rating > 0.6 ? '🏆 Smart Planner' : rating > 0.35 ? '🙂 Learning Budgeteer' : '⚠️ Needs Practice'
+  const scorePercent = Math.round(rating * 100)
+  
+  // Determine rank based on performance and difficulty
+  let rankIcon = '🏆'
+  let rankTitle = 'MONTH COMPLETE!'
+  if (scorePercent >= 85) rankIcon = '👑'
+  if (scorePercent >= 85) rankTitle = 'LEGENDARY CHAMPION'
+  else if (scorePercent >= 70) rankTitle = 'EXCELLENT BUDGETER'
+  else if (scorePercent >= 50) rankTitle = 'GOOD MONEY MANAGER'
+  else rankTitle = 'LEARNING JOURNEY'
+  
+  const title = result.personality ? `${rankIcon} ${result.personality}` : rankIcon + ' ' + rankTitle
   const recap = result.money > 0 && result.savings > 1500
-    ? 'You finished the month with money left and a strong savings habit.'
+    ? 'You finished the month with money left and a strong savings habit. Excellent money management!'
     : result.money <= 0
-      ? 'The month was tough, and overspending made survival harder.'
+      ? 'The month was tough, and overspending made survival harder. But you learned valuable lessons!'
       : 'You survived the month while learning how money choices change outcomes.'
 
   const lessons = []
@@ -18,33 +29,51 @@ export default function EndScreen({ result, onReplay }) {
   if (lessons.length === 0) lessons.push('Amazing balance! You used budgeting, saving, and patience very well.')
 
   return (
-    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-2xl glass-panel p-6 md:p-8">
+    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-3xl glass-panel p-6 md:p-8">
       <h2 className="kid-heading text-4xl md:text-5xl mb-2">{title}</h2>
       <p className="mb-4 text-lg md:text-2xl text-slate-700 font-semibold">Month Completed! Here is your money story.</p>
-      <p className="mb-4 text-base md:text-xl text-slate-700">{recap}</p>
+      
+      {/* Overall Score */}
+      <div className="mb-6 rounded-2xl bg-gradient-to-r from-purple-100 to-blue-100 p-6 border-3 border-purple-300 text-center">
+        <p className="text-sm font-bold text-slate-600 mb-2">OVERALL PERFORMANCE</p>
+        <div className="text-6xl md:text-7xl font-black text-purple-600 mb-2">{scorePercent}%</div>
+        <p className="text-lg md:text-2xl font-bold text-slate-700">{rankTitle}</p>
+      </div>
+
+      <p className="mb-6 text-base md:text-xl text-slate-700">{recap}</p>
 
       {/* Financial Dashboard Visualizations */}
       <div className="mb-6">
         <FinancialDashboard result={result} />
       </div>
 
+      {/* Achievements */}
       <div className="rounded-2xl bg-white/70 p-4 mb-4">
-        <h3 className="text-2xl md:text-3xl font-extrabold text-slate-800 mb-2">Lessons Learned</h3>
+        <h3 className="text-2xl md:text-3xl font-extrabold text-slate-800 mb-2">🏅 Achievements Unlocked</h3>
+        {result.achievements && result.achievements.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {result.achievements.map((achievement) => (
+              <div key={achievement} className="bg-gradient-to-r from-yellow-100 to-orange-100 p-3 rounded-lg border-2 border-yellow-300">
+                <p className="text-lg font-bold text-slate-700">{achievement}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-base md:text-xl text-slate-600">Keep playing to unlock more achievement badges!</p>
+        )}
+      </div>
+
+      {/* Lessons Learned */}
+      <div className="rounded-2xl bg-white/70 p-4 mb-4">
+        <h3 className="text-2xl md:text-3xl font-extrabold text-slate-800 mb-2">📚 Lessons Learned</h3>
         {lessons.map((lesson) => (
           <p key={lesson} className="text-base md:text-xl text-slate-700 mb-2">• {lesson}</p>
         ))}
       </div>
 
-      <div className="rounded-2xl bg-white/70 p-4 mb-5">
-        <h3 className="text-2xl md:text-3xl font-extrabold text-slate-800 mb-2">Badges</h3>
-        {result.achievements && result.achievements.length > 0 ? result.achievements.map((badge) => (
-          <p key={badge} className="text-base md:text-xl text-slate-700 mb-1">🏅 {badge}</p>
-        )) : <p className="text-base md:text-xl text-slate-600">Keep playing to unlock achievement badges.</p>}
-      </div>
-
       <div className="flex gap-3">
-        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} className="flex-1 pulse-btn text-white py-3 rounded-xl text-lg md:text-xl font-extrabold" onClick={onReplay}>Replay Month</motion.button>
-        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} className="flex-1 border-2 border-orange-200 bg-white/80 py-3 rounded-xl text-lg md:text-xl font-bold text-slate-700" onClick={() => alert('Share feature coming soon!')}>Share Result</motion.button>
+        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} className="flex-1 pulse-btn text-white py-3 rounded-xl text-lg md:text-xl font-extrabold" onClick={onReplay}>🎮 Play Again</motion.button>
+        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} className="flex-1 border-2 border-orange-200 bg-white/80 py-3 rounded-xl text-lg md:text-xl font-bold text-slate-700" onClick={() => alert('Share feature coming soon! Tell your friends about Budget Hero 💰')}>📤 Share Score</motion.button>
       </div>
     </motion.div>
   )

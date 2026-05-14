@@ -6,6 +6,41 @@ const SAVE_KEY = 'budget-hero-save-v2'
 const STARTING_MONEY = 5000
 const TOTAL_DAYS = 30
 
+// Boss events that appear at key moments
+const bossEvents = [
+  {
+    id: 'boss1',
+    day: 10,
+    type: 'challenge',
+    title: '🏆 WEEK 2 MILESTONE: Multi-Challenge Day',
+    text: 'This week gets intense! You face 2 major events today. Choose wisely!',
+    amount: 0,
+    isBoss: true,
+    challenge: true,
+  },
+  {
+    id: 'boss2',
+    day: 20,
+    type: 'challenge',
+    title: '⚡ FINAL STRETCH: Economy Crisis!',
+    text: 'Market crash! Unexpected expense surge. How will you survive?',
+    amount: 500,
+    isBoss: true,
+    challenge: true,
+  },
+]
+
+// Weekly missions/challenges
+const getMissionForWeek = (weekNumber) => {
+  const missions = [
+    { week: 1, title: '💰 WEEK 1: Save at least ₹400', goal: 400, stat: 'savings' },
+    { week: 2, title: '😊 WEEK 2: Keep happiness above 60', goal: 60, stat: 'happiness' },
+    { week: 3, title: '🎯 WEEK 3: Skip spending 3+ times', goal: 3, stat: 'skipCount' },
+    { week: 4, title: '🔥 WEEK 4: Achieve 5+ combo streak', goal: 5, stat: 'comboStreak' },
+  ]
+  return missions.find((m) => m.week === weekNumber) || missions[0]
+}
+
 const characterMods = {
   Gamer: { temptation: 1.15, social: 1, emergency: 1, positive: 1, creditPenalty: 1.15, saveBoost: 0.95 },
   Athlete: { temptation: 0.95, social: 0.9, emergency: 0.95, positive: 1, creditPenalty: 1, saveBoost: 1.1 },
@@ -67,7 +102,7 @@ function playTone(kind = 'tap') {
   }
 }
 
-function createStateFromSaved(savedData, profileType) {
+function createStateFromSaved(savedData, profileType, difficulty = 'Normal') {
   if (!savedData) {
     return {
       day: 1,
@@ -79,7 +114,10 @@ function createStateFromSaved(savedData, profileType) {
       achievements: [],
       recentLog: [],
       goodStreak: 0,
+      comboStreak: 0,
+      skipCount: 0,
       showGuide: true,
+      difficulty,
     }
   }
 
@@ -93,25 +131,32 @@ function createStateFromSaved(savedData, profileType) {
     achievements: savedData.achievements || [],
     recentLog: savedData.recentLog || [],
     goodStreak: savedData.goodStreak || 0,
+    comboStreak: savedData.comboStreak || 0,
+    skipCount: savedData.skipCount || 0,
     showGuide: false,
     profileType: savedData.profileType || profileType || 'Gamer',
+    difficulty: savedData.difficulty || difficulty || 'Normal',
   }
 }
 
-function adjustEvent(event, profileType) {
+function adjustEvent(event, profileType, difficulty = 'Normal') {
   const mods = characterMods[profileType] || characterMods.Gamer
+  
+  // Difficulty scaling
+  const difficultyMultiplier = difficulty === 'Easy' ? 0.7 : difficulty === 'Hard' ? 1.3 : 1
+  
   return {
     ...event,
-    amount: event.amount >= 0 ? Math.round(event.amount * (mods[event.type] || 1)) : event.amount,
+    amount: event.amount >= 0 ? Math.round(event.amount * (mods[event.type] || 1) * difficultyMultiplier) : event.amount,
     spendHappiness: Math.round(event.spendHappiness * (mods[event.type] || 1)),
     skipHappiness: Math.round(event.skipHappiness * (mods[event.type] || 1)),
-    saveBonus: Math.round(event.saveBonus * mods.saveBoost),
+    saveBonus: Math.round(event.saveBonus * mods.saveBoost * difficultyMultiplier),
     profileHint: profileType,
   }
 }
 
 export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
-  const startState = useMemo(() => createStateFromSaved(resumeData || safeParseSaved(), profile.type), [profile.type, resumeData])
+  const startState = useMemo(() => createStateFromSaved(resumeData || safeParseSaved(), profile.type, profile.difficulty), [profile.type, profile.difficulty, resumeData])
   const [day, setDay] = useState(startState.day)
   const [money, setMoney] = useState(startState.money)
   const [happiness, setHappiness] = useState(startState.happiness)
@@ -121,12 +166,17 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
   const [achievements, setAchievements] = useState(startState.achievements)
   const [recentLog, setRecentLog] = useState(startState.recentLog)
   const [goodStreak, setGoodStreak] = useState(startState.goodStreak)
+  const [comboStreak, setComboStreak] = useState(startState.comboStreak)
+  const [skipCount, setSkipCount] = useState(startState.skipCount)
   const [showGuide, setShowGuide] = useState(startState.showGuide)
   const [currentEvent, setCurrentEvent] = useState(null)
   const [lastImpact, setLastImpact] = useState(null)
   const [floatingText, setFloatingText] = useState('')
   const [clickFeedback, setClickFeedback] = useState(null)
   const [streakCelebration, setStreakCelebration] = useState(false)
+  const [difficulty] = useState(startState.difficulty)
+  const [isBossEvent, setIsBossEvent] = useState(false)
+  const [bossProgress, setBossProgress] = useState(0)
 
   const financialHealth = useMemo(() => {
     if (money < 800 || happiness < 35) return 'danger'
@@ -135,10 +185,31 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
   }, [money, happiness])
 
   function spawnEvent(nextDay = day) {
+    // Check for boss events
+    const boss = bossEvents.find((b) => b.day === nextDay)
+    if (boss) {
+      setIsBossEvent(true)
+      setBossProgress(0)
+      setCurrentEvent({ ...boss, uid: `${boss.id}-${nextDay}` })
+      return
+    }
+
+    setIsBossEvent(false)
     const profileBias = profile.type === 'Gamer' ? 'temptation' : profile.type === 'Athlete' ? 'social' : 'positive'
-    const weightedPool = Math.random() < 0.5 ? baseEvents.filter((event) => event.type === profileBias) : baseEvents
+    
+    // Difficulty affects event frequency
+    let eventPool = baseEvents
+    if (difficulty === 'Easy' && Math.random() < 0.3) {
+      // Less frequent events on Easy
+      eventPool = baseEvents.filter((e) => e.type !== 'temptation')
+    } else if (difficulty === 'Hard' && Math.random() < 0.4) {
+      // More temptation events on Hard
+      eventPool = baseEvents.filter((e) => e.type === 'temptation')
+    }
+    
+    const weightedPool = Math.random() < 0.5 ? eventPool.filter((event) => event.type === profileBias) : eventPool
     const event = weightedPool[Math.floor(Math.random() * weightedPool.length)]
-    setCurrentEvent({ ...adjustEvent(event, profile.type), uid: `${event.id}-${nextDay}-${Date.now()}` })
+    setCurrentEvent({ ...adjustEvent(event, profile.type, difficulty), uid: `${event.id}-${nextDay}-${Date.now()}` })
   }
 
   useEffect(() => {
@@ -146,20 +217,30 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
   }, [])
 
   useEffect(() => {
-    if (savings >= 2000 && !achievements.includes('Smart Saver')) {
-      setAchievements((prev) => [...prev, 'Smart Saver'])
+    if (savings >= 2000 && !achievements.includes('💾 Smart Saver')) {
+      setAchievements((prev) => [...prev, '💾 Smart Saver'])
       playTone('good')
     }
-    if (credit >= 760 && !achievements.includes('Credit Captain')) {
-      setAchievements((prev) => [...prev, 'Credit Captain'])
+    if (credit >= 760 && !achievements.includes('🛡️ Credit Captain')) {
+      setAchievements((prev) => [...prev, '🛡️ Credit Captain'])
     }
-    if (goodStreak >= 3 && !achievements.includes('Decision Streak')) {
-      setAchievements((prev) => [...prev, 'Decision Streak'])
+    if (goodStreak >= 3 && !achievements.includes('🔥 Decision Streak')) {
+      setAchievements((prev) => [...prev, '🔥 Decision Streak'])
     }
-    if (day >= TOTAL_DAYS && money > 0 && !achievements.includes('Month Survivor')) {
-      setAchievements((prev) => [...prev, 'Month Survivor'])
+    if (comboStreak >= 5 && !achievements.includes('🌟 Combo Master')) {
+      setAchievements((prev) => [...prev, '🌟 Combo Master'])
+      playTone('good')
     }
-  }, [savings, credit, day, money, goodStreak, achievements])
+    if (skipCount >= 3 && !achievements.includes('⏭️ Master Skipper')) {
+      setAchievements((prev) => [...prev, '⏭️ Master Skipper'])
+    }
+    if (difficulty === 'Hard' && day >= TOTAL_DAYS && money > 0 && !achievements.includes('⚡ Hard Mode Hero')) {
+      setAchievements((prev) => [...prev, '⚡ Hard Mode Hero'])
+    }
+    if (day >= TOTAL_DAYS && money > 0 && !achievements.includes('🏆 Month Survivor')) {
+      setAchievements((prev) => [...prev, '🏆 Month Survivor'])
+    }
+  }, [savings, credit, goodStreak, comboStreak, skipCount, day, money, difficulty, achievements])
 
   useEffect(() => {
     onSaveGame({
@@ -173,6 +254,9 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
       achievements,
       recentLog,
       goodStreak,
+      comboStreak,
+      skipCount,
+      difficulty,
     })
 
     localStorage.setItem(SAVE_KEY, JSON.stringify({
@@ -186,8 +270,11 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
       achievements,
       recentLog,
       goodStreak,
+      comboStreak,
+      skipCount,
+      difficulty,
     }))
-  }, [day, money, happiness, savings, credit, pendingEffects, achievements, recentLog, goodStreak, profile.type, onSaveGame])
+  }, [day, money, happiness, savings, credit, pendingEffects, achievements, recentLog, goodStreak, comboStreak, skipCount, difficulty, profile.type, onSaveGame])
 
   function finishDay(nextMoney, nextHappiness, nextSavings, nextCredit, logText) {
     const nextDay = day + 1
@@ -231,8 +318,16 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
 
     if (logText.includes('saved') || logText.includes('protected')) {
       setGoodStreak((prev) => prev + 1)
+      setComboStreak((prev) => prev + 1)
     } else if (logText.includes('credit') || logText.includes('spent')) {
       setGoodStreak(0)
+      setComboStreak(0)
+    } else {
+      setComboStreak(0)
+    }
+
+    if (logText.includes('skipped')) {
+      setSkipCount((prev) => prev + 1)
     }
 
     setFloatingText(summary.slice(0, 70))
@@ -265,6 +360,9 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
     let nextSavings = savings
     let nextCredit = credit
     let logText = ''
+    
+    // Combo multiplier bonus
+    const comboBonus = comboStreak >= 3 ? 1.2 : comboStreak >= 1 ? 1.1 : 1
 
     if (action === 'spend') {
       nextMoney -= Math.max(0, eventAmount)
@@ -285,10 +383,10 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
     if (action === 'save') {
       const transfer = Math.min(currentEvent.saveBonus, Math.max(0, money))
       nextMoney -= transfer
-      nextSavings += Math.round(transfer * (characterMods[profile.type]?.saveBoost || 1))
+      nextSavings += Math.round(transfer * (characterMods[profile.type]?.saveBoost || 1) * comboBonus)
       nextHappiness += 4
       nextCredit += 5
-      logText = `You saved ₹${transfer} and grew your future power.`
+      logText = `You saved ₹${transfer}${comboStreak >= 1 ? ' 🔥 COMBO BONUS!' : ''} and grew your future power.`
     }
 
     if (action === 'credit') {
@@ -312,8 +410,8 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
     })
 
     if (action === 'save') {
-      setClickFeedback({ type: 'save', text: '✨ Future You Thanks You!' })
-      if (goodStreak >= 2) setStreakCelebration(true)
+      setClickFeedback({ type: 'save', text: comboStreak >= 2 ? `🔥 COMBO x${comboStreak}!` : '✨ Future You Thanks You!' })
+      if (comboStreak >= 3) setStreakCelebration(true)
     } else if (action === 'credit') {
       setClickFeedback({ type: 'warning', text: '⚠️ Bill Coming Later!' })
     } else if (action === 'skip') {
@@ -332,15 +430,64 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
     'Spend, save, skip, or use credit.',
     'Emergencies hit harder if savings are low.',
     'Credit gives quick relief but a later bill.',
-    'Good streaks unlock badges and bonuses.',
+    'Build streaks for combo bonuses! 🔥',
+    'Survive boss events at Day 10 & Day 20.',
   ]
+
+  const currentWeek = Math.ceil(day / 7)
+  const weekMission = getMissionForWeek(currentWeek)
+  const progressPercent = (day / TOTAL_DAYS) * 100
 
   return (
     <div className={`w-full max-w-5xl glass-panel p-5 md:p-7 ${financialHealth === 'danger' ? 'ring-2 ring-rose-300' : financialHealth === 'warning' ? 'ring-2 ring-amber-300' : 'ring-2 ring-emerald-300'}`}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="kid-heading text-3xl md:text-5xl">Budget Hero Arena</h2>
-        <div className="rounded-2xl bg-white/80 px-4 py-2 text-base md:text-xl font-extrabold text-slate-700">📅 Day {day}/{TOTAL_DAYS}</div>
+        <div className="flex gap-2">
+          <div className="rounded-2xl bg-white/80 px-4 py-2 text-base md:text-xl font-extrabold text-slate-700">📅 Day {day}/{TOTAL_DAYS}</div>
+          <div className={`rounded-2xl px-4 py-2 text-base md:text-xl font-extrabold text-white ${difficulty === 'Easy' ? 'bg-green-500' : difficulty === 'Hard' ? 'bg-red-500' : 'bg-yellow-500'}`}>{difficulty}</div>
+        </div>
       </div>
+
+      {/* Progress Bar */}
+      <div className="mb-4">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-base font-bold text-slate-700">Month Progress: Week {currentWeek}/4</span>
+          <span className="text-sm font-bold text-slate-600">{Math.round(progressPercent)}%</span>
+        </div>
+        <div className="w-full bg-slate-300 rounded-full h-3 overflow-hidden">
+          <motion.div
+            className="bg-gradient-to-r from-blue-500 to-purple-500 h-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${progressPercent}%` }}
+            transition={{ duration: 0.5 }}
+          />
+        </div>
+      </div>
+
+      {/* Combo Counter & Mission */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+        <div className="rounded-xl bg-gradient-to-r from-orange-100 to-red-100 p-3 border-2 border-orange-300">
+          <p className="text-sm font-bold text-slate-600">🔥 Combo Streak</p>
+          <p className="text-2xl font-extrabold text-red-600">{comboStreak} Consecutive Good Choices</p>
+          <p className="text-xs text-slate-600 mt-1">Keep it going for bonus saves!</p>
+        </div>
+        <div className="rounded-xl bg-gradient-to-r from-blue-100 to-cyan-100 p-3 border-2 border-blue-300">
+          <p className="text-sm font-bold text-slate-600">🎯 Week {currentWeek} Mission</p>
+          <p className="text-lg font-extrabold text-blue-600">{weekMission.title}</p>
+        </div>
+      </div>
+
+      {/* Boss Event Alert */}
+      {isBossEvent && (
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="mb-4 rounded-xl bg-gradient-to-r from-red-200 to-yellow-200 p-4 border-4 border-red-500 text-center"
+        >
+          <p className="text-lg md:text-2xl font-extrabold text-red-700">⚡ BOSS CHALLENGE ⚡</p>
+          <p className="text-sm text-red-600 mt-1">Make your best choices now! This is a critical test!</p>
+        </motion.div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <motion.div className="stat-card" layout>
@@ -376,7 +523,7 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
 
       {showGuide && (
         <div className="mt-4 rounded-2xl bg-white/75 p-4">
-          <h3 className="text-2xl md:text-3xl font-extrabold mb-2 text-slate-800">Quick Tips</h3>
+          <h3 className="text-2xl md:text-3xl font-extrabold mb-2 text-slate-800">Game Guide</h3>
           <div className="grid gap-2 md:grid-cols-2">
             {guideSteps.map((step) => <p key={step} className="text-base md:text-lg text-slate-700">• {step}</p>)}
           </div>
