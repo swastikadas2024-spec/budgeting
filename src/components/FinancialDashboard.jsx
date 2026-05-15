@@ -3,9 +3,15 @@ import { motion } from 'framer-motion'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
 
 export default function FinancialDashboard({ result }) {
+  const safeResult = result || {}
+  const money = Number.isFinite(safeResult.money) ? safeResult.money : 0
+  const savings = Number.isFinite(safeResult.savings) ? safeResult.savings : 0
+  const happiness = Number.isFinite(safeResult.happiness) ? safeResult.happiness : 0
+  const credit = Number.isFinite(safeResult.credit) ? safeResult.credit : 720
+
   // Calculate spending categories based on typical student spending
   const spendingData = useMemo(() => {
-    const spent = 5000 - result.money
+    const spent = Math.max(0, 5000 - money)
     const estimatedSpending = {
       'Food & Snacks': Math.round(spent * 0.25),
       'Social & Entertainment': Math.round(spent * 0.20),
@@ -14,22 +20,22 @@ export default function FinancialDashboard({ result }) {
       'Other': Math.round(spent * 0.17),
     }
     return Object.entries(estimatedSpending).map(([name, value]) => ({ name, value }))
-  }, [result.money])
+  }, [money])
 
   // Financial health gauge data
   const healthMetrics = [
-    { label: 'Money Left', value: result.money, max: 5000, color: '#10b981', icon: '💰' },
-    { label: 'Savings', value: result.savings, max: 5000, color: '#3b82f6', icon: '🏦' },
-    { label: 'Happiness', value: result.happiness, max: 100, color: '#f59e0b', icon: '😊' },
-    { label: 'Credit Score', value: result.credit, max: 900, color: '#8b5cf6', icon: '⭐' },
+    { label: 'Money Left', value: money, max: 5000, color: '#10b981', icon: '💰' },
+    { label: 'Savings', value: savings, max: 5000, color: '#3b82f6', icon: '🏦' },
+    { label: 'Happiness', value: happiness, max: 100, color: '#f59e0b', icon: '😊' },
+    { label: 'Credit Score', value: credit, max: 900, color: '#8b5cf6', icon: '⭐' },
   ]
 
   // Performance comparison
   const performanceData = [
-    { metric: 'Money', value: (result.money / 5000) * 100, target: 60 },
-    { metric: 'Savings', value: (result.savings / 5000) * 100, target: 40 },
-    { metric: 'Happiness', value: result.happiness, target: 70 },
-    { metric: 'Credit', value: (result.credit / 900) * 100, target: 75 },
+    { metric: 'Money', value: (money / 5000) * 100, target: 60 },
+    { metric: 'Savings', value: (savings / 5000) * 100, target: 40 },
+    { metric: 'Happiness', value: happiness, target: 70 },
+    { metric: 'Credit', value: (credit / 900) * 100, target: 75 },
   ]
 
   const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#6366f1']
@@ -111,22 +117,22 @@ export default function FinancialDashboard({ result }) {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-gray-700">Total Spent</span>
-            <span className="font-bold text-lg text-red-600">₹{5000 - result.money}</span>
+            <span className="font-bold text-lg text-red-600">₹{5000 - money}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-gray-700">Savings Rate</span>
-            <span className="font-bold text-lg text-green-600">{((result.savings / 5000) * 100).toFixed(1)}%</span>
+            <span className="font-bold text-lg text-green-600">{((savings / 5000) * 100).toFixed(1)}%</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-gray-700">Financial Stability</span>
             <span className={`font-bold text-lg ${result.money > 2000 ? 'text-green-600' : result.money > 1000 ? 'text-yellow-600' : 'text-red-600'}`}>
-              {result.money > 2000 ? '✅ Strong' : result.money > 1000 ? '⚠️ Moderate' : '❌ At Risk'}
+              {money > 2000 ? '✅ Strong' : money > 1000 ? '⚠️ Moderate' : '❌ At Risk'}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-gray-700">Overall Score</span>
             <span className="font-bold text-lg text-purple-600">
-              {(((result.money / 5000) + (result.savings / 5000) + (result.happiness / 100) + (result.credit / 900)) / 4 * 100).toFixed(0)}%
+              {(((money / 5000) + (savings / 5000) + (happiness / 100) + (credit / 900)) / 4 * 100).toFixed(0)}%
             </span>
           </div>
         </div>

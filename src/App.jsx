@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import WelcomeScreen from './screens/WelcomeScreen'
 import GameScreen from './screens/GameScreen'
 import EndScreen from './screens/EndScreen'
+import BudgetSetup from './screens/BudgetSetup'
 
 const SAVE_KEY = 'budget-hero-save-v2'
 
@@ -23,13 +24,18 @@ export default function App() {
   }, [])
 
   function startNewGame(nextProfile) {
+    // First open budget setup
     setProfile(nextProfile)
+    setScreen('budget')
+  }
+
+  function confirmBudgetAndStart(budgetAlloc) {
+    // budgetAlloc is only UI; we don't alter game logic. proceed to transition
     setShowTransition(true)
-    // Transition to game after animation completes
     setTimeout(() => {
       setScreen('game')
       setShowTransition(false)
-    }, 3000)
+    }, 1400)
   }
 
   function continueGame() {
@@ -104,6 +110,11 @@ export default function App() {
         {screen === 'welcome' && !showTransition && (
           <motion.div key="welcome" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <WelcomeScreen hasSavedGame={!!savedGame} onStart={startNewGame} onContinue={continueGame} />
+          </motion.div>
+        )}
+        {screen === 'budget' && !showTransition && (
+          <motion.div key="budget" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <BudgetSetup profile={profile} onConfirm={confirmBudgetAndStart} onCancel={() => setScreen('welcome')} />
           </motion.div>
         )}
         {screen === 'game' && !showTransition && (

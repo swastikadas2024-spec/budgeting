@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
+import { playClick, spawnCoinBurst } from '../utils/ui'
 
 export default function EventCard({ event, onChoose }) {
   const isPositive = event.amount < 0
@@ -16,6 +17,9 @@ export default function EventCard({ event, onChoose }) {
     setRipples([newRipple])
     
     setTimeout(() => setRipples([]), 600)
+    playClick()
+    if (choice === 'save') spawnCoinBurst('💰')
+    if (choice === 'spend') spawnCoinBurst('🛍️')
     onChoose(choice)
   }
 

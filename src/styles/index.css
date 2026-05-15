@@ -1,35 +1,86 @@
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-	--bg-1: #fff6db;
-	--bg-2: #d7f9ff;
-	--bg-3: #ffe6f2;
-	--ink: #1f2a44;
-	--warm: #ff8a3d;
-	--mint: #20c997;
-	--sky: #35a7ff;
+	--gold: #ffd700;
+	--dark-gold: #b8860b;
+	--green: #00e676;
+	--dark-green: #00a152;
+	--red: #ff5252;
+	--blue: #40c4ff;
+	--purple: #ce93d8;
+	--bg: #0d0d2b;
+	--panel: #1a1a3e;
+	--panel2: #252550;
+	--text: #e8e8ff;
 }
 
 * {
 	box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+	min-height: 100%;
+	background: var(--bg);
+	color: var(--text);
+}
+
 body {
 	margin: 0;
 	font-family: 'Nunito', sans-serif;
-	color: var(--ink);
+	font-weight: 900;
+	color: var(--text);
+	overflow-x: hidden;
+	background:
+		radial-gradient(circle at 12% 18%, rgba(255, 215, 0, 0.09) 0 2px, transparent 2.5px),
+		radial-gradient(circle at 22% 72%, rgba(64, 196, 255, 0.12) 0 1.5px, transparent 2px),
+		radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.11) 0 1.5px, transparent 2px),
+		radial-gradient(circle at 46% 62%, rgba(255, 215, 0, 0.1) 0 2px, transparent 2.5px),
+		radial-gradient(circle at 58% 16%, rgba(255, 255, 255, 0.1) 0 1.5px, transparent 2px),
+		radial-gradient(circle at 68% 80%, rgba(64, 196, 255, 0.12) 0 2px, transparent 2.5px),
+		radial-gradient(circle at 76% 34%, rgba(206, 147, 216, 0.12) 0 1.5px, transparent 2px),
+		radial-gradient(circle at 84% 52%, rgba(255, 255, 255, 0.1) 0 1.5px, transparent 2px),
+		radial-gradient(circle at 92% 24%, rgba(255, 215, 0, 0.1) 0 2px, transparent 2.5px),
+		radial-gradient(circle at 95% 78%, rgba(64, 196, 255, 0.12) 0 1.5px, transparent 2px),
+		var(--bg);
 }
 
-.app-bg {
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+}
+
+.app-shell {
 	position: relative;
-	background: radial-gradient(circle at 15% 15%, #fff4c8 0%, rgba(255, 244, 200, 0.25) 40%),
-		radial-gradient(circle at 85% 20%, #b7f3ff 0%, rgba(183, 243, 255, 0.2) 35%),
-		linear-gradient(125deg, var(--bg-1), var(--bg-2), var(--bg-3));
+	background: radial-gradient(circle at top, rgba(206, 147, 216, 0.1), transparent 38%), var(--bg);
 	overflow: hidden;
+	color: var(--text);
+}
+
+.starfield {
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	z-index: 0;
+	background-image:
+		radial-gradient(circle at 8% 12%, rgba(255, 255, 255, 0.9) 0 1px, transparent 1.5px),
+		radial-gradient(circle at 15% 68%, rgba(255, 215, 0, 0.8) 0 1.3px, transparent 1.8px),
+		radial-gradient(circle at 24% 31%, rgba(64, 196, 255, 0.9) 0 1.2px, transparent 1.8px),
+		radial-gradient(circle at 38% 18%, rgba(255, 255, 255, 0.8) 0 1px, transparent 1.6px),
+		radial-gradient(circle at 46% 74%, rgba(255, 215, 0, 0.75) 0 1.2px, transparent 1.8px),
+		radial-gradient(circle at 57% 24%, rgba(64, 196, 255, 0.85) 0 1.1px, transparent 1.7px),
+		radial-gradient(circle at 66% 57%, rgba(255, 255, 255, 0.7) 0 1px, transparent 1.5px),
+		radial-gradient(circle at 76% 16%, rgba(206, 147, 216, 0.9) 0 1.1px, transparent 1.7px),
+		radial-gradient(circle at 87% 43%, rgba(255, 215, 0, 0.75) 0 1.2px, transparent 1.8px),
+		radial-gradient(circle at 94% 82%, rgba(64, 196, 255, 0.85) 0 1px, transparent 1.5px);
+	animation: starDrift 18s linear infinite;
+	opacity: 0.9;
 }
 
 .floating-shapes::before,
@@ -60,28 +111,29 @@ body {
 }
 
 .glass-panel {
-	background: rgba(255, 255, 255, 0.62);
-	border: 1px solid rgba(255, 255, 255, 0.75);
-	box-shadow: 0 14px 35px rgba(31, 42, 68, 0.14);
+	background: rgba(26, 26, 62, 0.88);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
 	border-radius: 28px;
 	backdrop-filter: blur(10px);
 	position: relative;
 	z-index: 1;
+	color: var(--text);
 }
 
 .kid-heading {
-	font-family: 'Baloo 2', cursive;
+	font-family: 'Press Start 2P', monospace;
 	line-height: 1.02;
-	letter-spacing: 0.2px;
-	color: #1a2e55;
+	letter-spacing: 0.02em;
+	color: var(--gold);
 }
 
 .stat-card {
-	background: rgba(255, 255, 255, 0.72);
+	background: rgba(37, 37, 80, 0.96);
 	border-radius: 18px;
 	padding: 12px;
-	border: 1px solid rgba(255, 255, 255, 0.95);
-	box-shadow: 0 8px 20px rgba(26, 46, 85, 0.08);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
 }
 
 .stat-label {
@@ -124,14 +176,84 @@ body {
 }
 
 .pulse-btn {
-	background: linear-gradient(135deg, var(--warm), #ff6b6b);
-	box-shadow: 0 10px 20px rgba(255, 107, 107, 0.25);
+	background: linear-gradient(135deg, var(--gold), #ffb300);
+	box-shadow: 0 10px 0 #5a3e00;
 	animation: pulseGlow 1.8s ease-in-out infinite;
 }
 
 @keyframes pulseGlow {
-	0%, 100% { transform: translateY(0); box-shadow: 0 10px 20px rgba(255, 107, 107, 0.25); }
-	50% { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(255, 138, 61, 0.34); }
+	0%, 100% { transform: translateY(0) scale(1); }
+	50% { transform: translateY(-1px) scale(1.02); }
+}
+
+.font-display {
+	font-family: 'Press Start 2P', monospace;
+}
+
+.font-ui {
+	font-family: 'Nunito', sans-serif;
+	font-weight: 900;
+}
+
+.text-shadow-gold {
+	text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 4px 4px 0 #5a3e00;
+}
+
+.animate-bounce-gentle {
+	animation: bounceGentle 1s ease-in-out infinite;
+}
+
+.animate-pulse-scale {
+	animation: pulseScale 1s ease-in-out infinite;
+}
+
+.animate-pop-in {
+	animation: popIn 0.4s ease-out both;
+}
+
+.gold-3d {
+	box-shadow: 0 6px 0 #5a3e00;
+}
+
+.gold-3d:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 8px 0 #5a3e00;
+}
+
+.gold-3d:active {
+	transform: translateY(4px);
+	box-shadow: 0 2px 0 #5a3e00;
+}
+
+@keyframes starDrift {
+	0% { transform: translate3d(0, 0, 0); }
+	50% { transform: translate3d(-8px, 10px, 0); }
+	100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes bounceGentle {
+	0%, 100% { transform: translateY(0); }
+	50% { transform: translateY(-12px); }
+}
+
+@keyframes pulseScale {
+	0%, 100% { transform: scale(1); }
+	50% { transform: scale(1.04); }
+}
+
+@keyframes popIn {
+	0% { transform: scale(0); }
+	70% { transform: scale(1.2); }
+	100% { transform: scale(1); }
+}
+
+@keyframes coinFly {
+	0% { opacity: 1; transform: translate(0, 0) scale(1); }
+	100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.5); }
+}
+
+.coin-fly {
+	animation: coinFly 0.8s ease-out forwards;
 }
 
 @keyframes floatA {

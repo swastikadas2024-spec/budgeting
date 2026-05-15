@@ -98,9 +98,14 @@ export default function Calculator({ onSaveCalculation }) {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white text-2xl font-bold shadow-lg hover:shadow-xl z-40"
+        aria-label="Open calculator"
+        className="fixed top-5 right-5 z-40 flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-500 px-3 py-2 text-white shadow-2xl ring-4 ring-white/40 hover:shadow-[0_18px_40px_rgba(59,130,246,0.35)]"
       >
-        🧮
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-xl">🧮</span>
+        <span className="hidden text-left sm:flex sm:flex-col">
+          <span className="text-xs font-extrabold leading-none">Calculator</span>
+          <span className="text-[10px] font-semibold text-white/85 leading-none">Quick math</span>
+        </span>
       </motion.button>
 
       {/* Calculator Modal */}

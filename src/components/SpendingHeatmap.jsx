@@ -4,9 +4,11 @@ import { motion } from 'framer-motion'
 export default function SpendingHeatmap({ result }) {
   // Generate daily spending data based on result
   const dailyData = useMemo(() => {
+    const safeResult = result || {}
     const startMoney = 5000
-    const endMoney = result.money
-    const totalSpent = startMoney + (result.savings - 500) - endMoney
+    const endMoney = Number.isFinite(safeResult.money) ? safeResult.money : 0
+    const savings = Number.isFinite(safeResult.savings) ? safeResult.savings : 500
+    const totalSpent = Math.max(0, startMoney + (savings - 500) - endMoney)
     
     // Estimate daily spending (simplified - distribute across 30 days)
     // For a proper implementation, you'd track this during gameplay

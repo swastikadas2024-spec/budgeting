@@ -2,6 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import EventCard from '../components/EventCard'
 import Calculator from '../components/Calculator'
+import FeedbackModal from '../components/FeedbackModal'
+import RecentLog from '../components/RecentLog'
+import BadgesRow from '../components/BadgesRow'
+import MissionBanner from '../components/MissionBanner'
 
 const SAVE_KEY = 'budget-hero-save-v2'
 const STARTING_MONEY = 5000
@@ -174,6 +178,7 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
   const [lastImpact, setLastImpact] = useState(null)
   const [floatingText, setFloatingText] = useState('')
   const [clickFeedback, setClickFeedback] = useState(null)
+  const [pendingFinish, setPendingFinish] = useState(null)
   const [streakCelebration, setStreakCelebration] = useState(false)
   const [difficulty] = useState(startState.difficulty)
   const [isBossEvent, setIsBossEvent] = useState(false)
@@ -424,7 +429,8 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
     setTimeout(() => setClickFeedback(null), 1500)
     setTimeout(() => setStreakCelebration(false), 1200)
 
-    finishDay(nextMoney, nextHappiness, nextSavings, nextCredit, logText)
+    // Defer finishing the day until player taps NEXT DAY on the feedback modal
+    setPendingFinish({ nextMoney, nextHappiness, nextSavings, nextCredit, logText })
   }
 
   const guideSteps = [
@@ -472,9 +478,8 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
           <p className="text-2xl font-extrabold text-red-600">{comboStreak} Consecutive Good Choices</p>
           <p className="text-xs text-slate-600 mt-1">Keep it going for bonus saves!</p>
         </div>
-        <div className="rounded-xl bg-gradient-to-r from-blue-100 to-cyan-100 p-3 border-2 border-blue-300">
-          <p className="text-sm font-bold text-slate-600">🎯 Week {currentWeek} Mission</p>
-          <p className="text-lg font-extrabold text-blue-600">{weekMission.title}</p>
+        <div>
+          <MissionBanner week={currentWeek} mission={weekMission} />
         </div>
       </div>
 
@@ -536,24 +541,14 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
           {currentEvent && <EventCard key={currentEvent.uid} event={currentEvent} onChoose={handleChoice} />}
         </AnimatePresence>
 
-        {/* Click Feedback Animations */}
-        <AnimatePresence>
-          {clickFeedback && (
-            <motion.div
-              initial={{ opacity: 0, y: -20, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.8 }}
-              className={`absolute -top-16 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl font-bold text-lg md:text-xl whitespace-nowrap ${
-                clickFeedback.type === 'save' ? 'bg-gradient-to-r from-emerald-400 to-green-500 text-white' :
-                clickFeedback.type === 'warning' ? 'bg-gradient-to-r from-orange-400 to-red-500 text-white' :
-                clickFeedback.type === 'positive' ? 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white' :
-                'bg-gradient-to-r from-purple-400 to-pink-500 text-white'
-              }`}
-            >
-              {clickFeedback.text}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Feedback modal */}
+        <FeedbackModal isOpen={!!pendingFinish} impact={lastImpact} feedback={{ ...clickFeedback, title: clickFeedback?.text }} onNext={() => {
+          if (!pendingFinish) return
+          const { nextMoney, nextHappiness, nextSavings, nextCredit, logText } = pendingFinish
+          finishDay(nextMoney, nextHappiness, nextSavings, nextCredit, logText)
+          setPendingFinish(null)
+          setClickFeedback(null)
+        }} />
 
         {/* Streak Celebration */}
         <AnimatePresence>
@@ -595,16 +590,13 @@ export default function GameScreen({ profile, resumeData, onSaveGame, onEnd }) {
       </div>
 
       <div className="mt-4 grid md:grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-white/70 p-4">
-          <h3 className="text-2xl md:text-3xl font-extrabold text-slate-800 mb-2">Recent Consequences</h3>
-          {recentLog.length === 0 && <p className="text-slate-600 text-base md:text-lg">Make a choice to begin your story.</p>}
-          {recentLog.map((entry) => <p key={entry} className="text-slate-700 text-base md:text-lg mb-1">• {entry}</p>)}
+        <div className="rounded-2xl p-4">
+          <RecentLog entries={recentLog} />
         </div>
 
-        <div className="rounded-2xl bg-white/70 p-4">
-          <h3 className="text-2xl md:text-3xl font-extrabold text-slate-800 mb-2">Achievements</h3>
-          {achievements.length === 0 && <p className="text-slate-600 text-base md:text-lg">No badges yet. Smart choices unlock them.</p>}
-          {achievements.map((badge) => <p key={badge} className="text-slate-700 text-base md:text-lg mb-1">🏅 {badge}</p>)}
+        <div className="rounded-2xl p-4">
+          <h3 className="text-sm uppercase text-white/70 mb-2">Badges</h3>
+          <BadgesRow state={{ savings, goodStreak, skipCount, happiness, day, creditUsed: 0 }} />
         </div>
       </div>
 
